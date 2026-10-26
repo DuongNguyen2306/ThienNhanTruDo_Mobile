@@ -36,6 +36,13 @@ interface AuthContextValue {
   status: AuthStatus;
   /** Sign in with a phone number or e-mail address. */
   signIn: (identifier: string, password: string) => Promise<void>;
+  /**
+   * Finish a registration with the e-mail OTP.
+   *
+   * The backend issues a real token once the address is proven, so the
+   * user is signed in immediately — no second password entry.
+   */
+  verifyRegistrationOtp: (email: string, otp: string) => Promise<void>;
   /** Sign out and wipe the stored token. */
   signOut: () => Promise<void>;
   /** Re-read the session from the backend. */
@@ -48,6 +55,7 @@ const AuthContext = createContext<AuthContextValue>({
   isAuthenticated: false,
   status: 'initializing',
   signIn: async () => {},
+  verifyRegistrationOtp: async () => {},
   signOut: async () => {},
   refresh: async () => {},
 });
@@ -144,6 +152,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [clearSession],
   );
 
+  /**
+   * Consume the registration OTP and open a session.
+   *
+   * The backend returns a real token, so the JWT is stored in the keychain
+   * exactly like a password sign-in.
+   */
+  const verifyRegistrationOtp = useCallback(
+    async (email: string, otp: string) => {
+      const result = await authApi.verifyEmail(email.trim().toLowerCase(), otp.trim());
+
+      if (!isMobileRole(result.user.role)) {
+        await clearSession();
+        throw new ApiError('Tài khoản này không được phép sử dụng ứng dụng di động.', 403, {
+          error: 'ROLE_NOT_SUPPORTED',
+        });
+      }
+
+      await secureTokenStore.set(result.token);
+      setUser(toSessionUser(result.user));
+      setStatus('authenticated');
+    },
+    [clearSession],
+  );
+
   const signOut = useCallback(async () => {
     await clearSession();
   }, [clearSession]);
@@ -169,10 +201,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: status === 'authenticated' && user !== null,
       status,
       signIn,
+      verifyRegistrationOtp,
       signOut,
       refresh,
     }),
-    [user, status, signIn, signOut, refresh],
+    [user, status, signIn, verifyRegistrationOtp, signOut, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

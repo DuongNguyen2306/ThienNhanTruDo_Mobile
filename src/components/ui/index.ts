@@ -28,3 +28,6 @@ export type { LoadingStateProps } from '@/components/ui/loading-state';
 
 export { StatusBadge } from '@/components/ui/status-badge';
 export type { StatusBadgeProps, StatusBadgeVariant } from '@/components/ui/status-badge';
+
+export { OtpInput, OTP_LENGTH } from '@/components/ui/otp-input';
+export type { OtpInputProps } from '@/components/ui/otp-input';

@@ -7,7 +7,7 @@
  * right place:
  *
  *   no session        → /(auth)/onboarding
- *   session: tenant   → /(tenant)/trang-chu
+ *   session: tenant   → /(tenant)/(tabs)/trang-chu
  *   session: seller   → /(seller)/tong-quan
  *   session: manager  → blocked, the session is discarded
  *   session: admin    → blocked, the session is discarded
@@ -61,8 +61,8 @@ export default function IndexScreen() {
   }
 
   if (user.role === 'seller') {
-    return <Redirect href="/(seller)/tong-quan" />;
+    return <Redirect href="/(seller)/(tabs)/tong-quan" />;
   }
 
-  return <Redirect href="/(tenant)/trang-chu" />;
+  return <Redirect href="/(tenant)/(tabs)/trang-chu" />;
 }

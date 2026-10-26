@@ -1,19 +1,45 @@
 /**
  * `(tenant)` group — the TENANT (người thuê) interface.
  *
- * Five tabs: Trang chủ · Tìm phòng · Đã lưu · Lịch hẹn · Tài khoản.
+ * Architecture (BUG-01 fix):
  *
- * The tab structure is defined here, but the ACCESS CONTROL lives in
- * `useAuthGuard`: a signed-in seller who opens a tenant tab is redirected
- * to their own home.
+ *   (tenant)/_layout.tsx          ← THIS FILE. A Stack, plus the guard.
+ *   (tenant)/(tabs)/_layout.tsx   ← the bottom navigation, 5 tabs only.
+ *   (tenant)/<other screens>      ← pushed on the Stack, never a tab.
+ *
+ * The five tabs live in the nested `(tabs)` group:
+ *
+ *   (tabs)/trang-chu · (tabs)/tim-phong · (tabs)/da-luu
+ *   (tabs)/lich-hen  · (tabs)/tai-khoan
+ *
+ * Everything else is a sibling of `(tabs)` and is presented on top of the
+ * tab bar, so it can never be auto-registered as a tab:
+ *
+ *   chi-tiet-phong · thu-vien · dat-hen-xem · dat-hen-thanh-cong
+ *   sua-ho-so · dang-ky-chu-tro · ban-do
+ *
+ * The tab bar is part of the `(tabs)` screen, so it stays visible on the
+ * five tabs and is hidden naturally on every pushed screen — no
+ * `tabBarStyle: { display: 'none' }` hacks.
+ *
+ * Access control lives in `useAuthGuard`: a signed-in seller who opens a
+ * tenant screen is redirected to their own home.
  */
 
-import { Redirect, Tabs } from 'expo-router';
-import { Bookmark, CalendarDays, Home, Search, User } from 'lucide-react-native';
+import { Redirect, Stack } from 'expo-router';
 
 import { LoadingState } from '@/components/ui';
 import { useAuthGuard } from '@/hooks/use-auth-guard';
-import { colors, fontFamily, fontSize } from '@/constants/theme';
+import { colors } from '@/constants/theme';
+
+/**
+ * The `(tabs)` group is the base of the stack, so a deep link straight to a
+ * pushed screen (e.g. a room detail) still has the bottom navigation under it.
+ */
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+  anchor: '(tabs)',
+};
 
 export default function TenantLayout() {
   const { isChecking, canAccess, redirect } = useAuthGuard({ allowedRole: 'tenant' });
@@ -31,66 +57,23 @@ export default function TenantLayout() {
   }
 
   return (
-    <Tabs
+    <Stack
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.ink,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.ink,
-          borderTopWidth: 2,
-          height: 62,
-          paddingBottom: 8,
-          paddingTop: 6,
-        },
-        tabBarLabelStyle: {
-          fontFamily: fontFamily.medium,
-          fontSize: fontSize.xs,
-        },
-        tabBarIconStyle: {
-          marginTop: 2,
-        },
-        sceneStyle: {
-          backgroundColor: colors.background,
-        },
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Tabs.Screen
-        name="trang-chu"
-        options={{
-          title: 'Trang chủ',
-          tabBarIcon: ({ color }) => <Home size={21} color={color} strokeWidth={2.4} />,
-        }}
-      />
-      <Tabs.Screen
-        name="tim-phong"
-        options={{
-          title: 'Tìm phòng',
-          tabBarIcon: ({ color }) => <Search size={21} color={color} strokeWidth={2.4} />,
-        }}
-      />
-      <Tabs.Screen
-        name="da-luu"
-        options={{
-          title: 'Đã lưu',
-          tabBarIcon: ({ color }) => <Bookmark size={21} color={color} strokeWidth={2.4} />,
-        }}
-      />
-      <Tabs.Screen
-        name="lich-hen"
-        options={{
-          title: 'Lịch hẹn',
-          tabBarIcon: ({ color }) => <CalendarDays size={21} color={color} strokeWidth={2.4} />,
-        }}
-      />
-      <Tabs.Screen
-        name="tai-khoan"
-        options={{
-          title: 'Tài khoản',
-          tabBarIcon: ({ color }) => <User size={21} color={color} strokeWidth={2.4} />,
-        }}
-      />
-    </Tabs>
+      {/* --- Bottom navigation ------------------------------------- */}
+      <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
+
+      {/* --- Screens pushed on top of the tabs ---------------------- */}
+      <Stack.Screen name="chi-tiet-phong" options={{ title: 'Chi tiết phòng' }} />
+      <Stack.Screen name="thu-vien" options={{ title: 'Thư viện ảnh' }} />
+      <Stack.Screen name="dat-hen-xem" options={{ title: 'Đặt hẹn xem' }} />
+      <Stack.Screen name="dat-hen-thanh-cong" options={{ title: 'Đặt hẹn thành công' }} />
+      <Stack.Screen name="sua-ho-so" options={{ title: 'Sửa hồ sơ' }} />
+      <Stack.Screen name="dang-ky-chu-tro" options={{ title: 'Đăng ký chủ trọ' }} />
+      <Stack.Screen name="ban-do" options={{ title: 'Bản đồ' }} />
+    </Stack>
   );
 }

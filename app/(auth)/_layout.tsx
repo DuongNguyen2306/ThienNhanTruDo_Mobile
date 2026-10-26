@@ -23,9 +23,9 @@ export default function AuthLayout() {
 
   if (isAuthenticated && user) {
     if (user.role === 'seller') {
-      return <Redirect href="/(seller)/tong-quan" />;
+      return <Redirect href="/(seller)/(tabs)/tong-quan" />;
     }
-    return <Redirect href="/(tenant)/trang-chu" />;
+    return <Redirect href="/(tenant)/(tabs)/trang-chu" />;
   }
 
   return (

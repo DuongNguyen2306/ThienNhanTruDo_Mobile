@@ -53,6 +53,34 @@ export interface LoginResponse {
   token: string;
 }
 
+export interface RegisterRequest {
+  fullName: string;
+  phone: string;
+  email: string;
+  password: string;
+}
+
+/**
+ * The backend creates the account UNVERIFIED and e-mails a 6-digit OTP.
+ * No token is issued until the address is proven, so `token` is absent.
+ */
+export interface RegisterResponse {
+  message: string;
+  requiresVerification: boolean;
+  email: string;
+  phone: string;
+  resendAvailableIn: number;
+  user: {
+    id: string;
+    phone: string;
+    email: string;
+    fullName: string;
+    role: Role;
+    initials: string;
+    title: string;
+  };
+}
+
 export interface LoginErrorPayload {
   error?: string;
   code?: string;

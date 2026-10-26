@@ -33,11 +33,18 @@ export interface AppInputProps extends TextInputProps {
   rightSlot?: React.ReactNode;
   /** Extra padding on the right of the text, reserved for `rightSlot`. */
   rightInset?: number;
+  /**
+   * Rendered inside the field, on the left edge — used for the leading
+   * field icon (user, phone, mail, lock).
+   */
+  leftSlot?: React.ReactNode;
+  /** Extra padding on the left of the text, reserved for `leftSlot`. */
+  leftInset?: number;
 }
 
 export const AppInput = forwardRef<React.ElementRef<typeof TextInput>, AppInputProps>(
   function AppInput(
-    { label, error, hint, containerStyle, style, onFocus, onBlur, rightSlot, rightInset, ...rest },
+    { label, error, hint, containerStyle, style, onFocus, onBlur, rightSlot, rightInset, leftSlot, leftInset, ...rest },
     ref,
   ) {
   const [focused, setFocused] = useState(false);
@@ -80,12 +87,14 @@ export const AppInput = forwardRef<React.ElementRef<typeof TextInput>, AppInputP
             },
             focused ? styles.focused : null,
             rightSlot ? { paddingRight: (rightInset ?? 44) + spacing.lg } : null,
+            leftSlot ? { paddingLeft: (leftInset ?? 20) + spacing.lg } : null,
             style,
           ]}
           {...rest}
         />
 
         {rightSlot ? <View style={styles.rightSlot}>{rightSlot}</View> : null}
+        {leftSlot ? <View style={styles.leftSlot}>{leftSlot}</View> : null}
       </View>
 
       {error ? (
@@ -131,6 +140,13 @@ const styles = StyleSheet.create({
   rightSlot: {
     position: 'absolute',
     right: spacing.sm,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  leftSlot: {
+    position: 'absolute',
+    left: spacing.md,
     top: 0,
     bottom: 0,
     justifyContent: 'center',

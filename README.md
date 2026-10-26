@@ -3,8 +3,8 @@
 Ứng dụng di động cho nền tảng THIÊN NHÃN TRÚ ĐỒ. Ứng dụng dùng **chung hệ thống
 đăng nhập** và **chung backend Express** với website Next.js — không có backend riêng.
 
-> Giai đoạn hiện tại: khởi tạo nền tảng + design system + cấu trúc router.
-> 31 màn hình trong `design-references/` được triển khai dần theo từng SCENE.
+> Giai đoạn hiện tại: SCENE 001–019 đã triển khai (auth đầy đủ + toàn bộ luồng
+> người thuê). Các SCENE còn lại được triển khai dần.
 
 ---
 
@@ -56,14 +56,28 @@ mobile/
 │   ├── index.tsx               # Điểm vào — điều hướng theo session/role
 │   ├── (auth)/
 │   │   ├── _layout.tsx         # Guard: đã đăng nhập → về home
-│   │   └── dang-nhap.tsx       # Đăng nhập (dùng chung cho cả 2 role)
+│   │   ├── onboarding.tsx      # SCENE 002
+│   │   ├── dang-nhap.tsx       # SCENE 003
+│   │   ├── dang-ky.tsx         # SCENE 004
+│   │   ├── xac-thuc-email.tsx  # SCENE 005 — OTP xác thực email
+│   │   ├── quen-mat-khau.tsx   # SCENE 006 — quên mật khẩu
+│   │   └── dat-lai-mat-khau.tsx# SCENE 007 — đặt lại mật khẩu
 │   ├── (tenant)/
-│   │   ├── _layout.tsx         # Guard role: TENANT
-│   │   ├── trang-chu.tsx
-│   │   ├── tim-phong.tsx
-│   │   ├── da-luu.tsx
-│   │   ├── lich-hen.tsx
-│   │   └── tai-khoan.tsx
+│   │   ├── _layout.tsx         # Guard role TENANT + Stack (màn hình phụ)
+│   │   ├── (tabs)/
+│   │   │   ├── _layout.tsx     # Bottom Navigation — đúng 5 tab
+│   │   │   ├── trang-chu.tsx   # SCENE 008
+│   │   │   ├── tim-phong.tsx   # SCENE 009
+│   │   │   ├── da-luu.tsx      # SCENE 015
+│   │   │   ├── lich-hen.tsx    # SCENE 016
+│   │   │   └── tai-khoan.tsx   # SCENE 017
+│   │   ├── ban-do.tsx          # SCENE 010  ─┐
+│   │   ├── chi-tiet-phong.tsx  # SCENE 011   │
+│   │   ├── thu-vien.tsx        # SCENE 012   │ pushed trên Stack,
+│   │   ├── dat-hen-xem.tsx     # SCENE 013   │ KHÔNG phải tab
+│   │   ├── dat-hen-thanh-cong.tsx # SCENE 014│
+│   │   ├── sua-ho-so.tsx       # SCENE 018   │
+│   │   └── dang-ky-chu-tro.tsx # SCENE 019  ─┘
 │   └── (seller)/
 │       ├── _layout.tsx         # Guard role: SELLER
 │       ├── tong-quan.tsx
@@ -79,23 +93,33 @@ mobile/
 │   │   │   ├── app-card.tsx
 │   │   │   ├── app-header.tsx
 │   │   │   ├── status-badge.tsx
+│   │   │   ├── otp-input.tsx
 │   │   │   ├── empty-state.tsx
 │   │   │   ├── loading-state.tsx
 │   │   │   ├── error-state.tsx
 │   │   │   └── index.ts        # Barrel export
+│   │   ├── brand/              # Logo + splash (SCENE 001)
+│   │   ├── tenant/             # Component riêng cho người thuê
+│   │   │   ├── listing-card.tsx
+│   │   │   ├── filter-chip.tsx
+│   │   │   ├── section-title.tsx
+│   │   │   └── index.ts
 │   │   └── placeholder-screen.tsx
 │   ├── constants/
 │   │   └── theme.ts            # Design tokens (màu, typography, spacing…)
 │   ├── hooks/
 │   │   ├── use-app-fonts.ts    # Nạp Be Vietnam Pro
-│   │   └── use-auth-guard.tsx  # Bảo vệ route theo session + role
+│   │   ├── use-auth-guard.tsx  # Bảo vệ route theo session + role
+│   │   └── use-async-data.ts   # Loading / error / reload cho mọi màn danh sách
 │   ├── lib/
 │   │   ├── api-client.ts       # Axios instance + interceptor token
-│   │   └── secure-token-store.ts
+│   │   ├── secure-token-store.ts
+│   │   └── format.ts           # Định dạng tiền, diện tích, ngày, địa chỉ
 │   ├── providers/
 │   │   └── auth-provider.tsx   # Session: đăng nhập / đăng xuất / khôi phục
 │   └── types/
-│       └── auth.ts             # Role, SessionUser, ApiUser…
+│       ├── auth.ts             # Role, SessionUser, ApiUser…
+│       └── listing.ts          # Listing, Appointment, TenantProfile…
 ├── assets/images/              # Icon + splash (sinh tự động)
 ├── scripts/
 │   ├── generate-assets.js      # Sinh lại icon từ brand mark
@@ -132,7 +156,10 @@ Toàn bộ token nằm trong `src/constants/theme.ts`.
 **Component dùng chung**
 
 `AppButton` · `AppInput` · `AppCard` · `AppHeader` · `StatusBadge` ·
-`EmptyState` · `LoadingState` · `ErrorState`
+`OtpInput` · `EmptyState` · `LoadingState` · `ErrorState`
+
+Component riêng cho người thuê (`src/components/tenant/`):
+`ListingCard` · `FilterChip` · `SectionTitle`
 
 ## 5. Session & phân quyền
 
@@ -144,7 +171,7 @@ Toàn bộ token nằm trong `src/constants/theme.ts`.
 3. Token được lưu trong **keychain** qua `expo-secure-store` (`secure-token-store.ts`).
 4. `AuthProvider` giữ session trong React state.
 5. `app/index.tsx` điều hướng theo role:
-   - `tenant` → `/(tenant)/trang-chu`
+   - `tenant` → `/(tenant)/(tabs)/trang-chu`
    - `seller` → `/(seller)/tong-quan`
 
 ### Cơ chế bảo vệ route
@@ -184,6 +211,25 @@ Các endpoint đang dùng (không thay đổi backend):
 | --- | --- | --- |
 | `POST` | `/api/auth/login` | Đăng nhập |
 | `GET` | `/api/auth/me` | Kiểm chứng session |
+| `POST` | `/api/auth/register` | Đăng ký (tạo tài khoản UNVERIFIED) |
+| `POST` | `/api/auth/verify-email` | Xác minh OTP đăng ký → trả token |
+| `POST` | `/api/auth/resend-verification` | Gửi lại mã đăng ký |
+| `POST` | `/api/auth/forgot-password` | Bắt đầu luồng quên mật khẩu |
+| `POST` | `/api/auth/resend-password-reset` | Gửi lại mã quên mật khẩu |
+| `POST` | `/api/auth/reset-password` | Hoàn tất đặt lại mật khẩu |
+| `PUT` | `/api/auth/profile` | Sửa hồ sơ (đổi email cần OTP) |
+| `POST` | `/api/auth/apply-seller` | Nộp hồ sơ đăng ký chủ trọ |
+| `GET` | `/api/auth/seller-application` | Trạng thái hồ sơ chủ trọ |
+| `GET` | `/api/listings` | Tìm kiếm / lọc phòng |
+| `GET` | `/api/listings/featured` | Phòng nổi bật (trang chủ) |
+| `GET` | `/api/listings/:id` | Chi tiết phòng + đánh giá |
+| `GET` | `/api/tenant/profile` | Hồ sơ + 3 bộ đếm |
+| `GET` | `/api/tenant/saved` | Phòng đã lưu |
+| `POST` | `/api/tenant/saved/:id` | Lưu phòng |
+| `DELETE` | `/api/tenant/saved/:id` | Bỏ lưu phòng |
+| `GET` | `/api/tenant/appointments` | Lịch hẹn xem |
+| `POST` | `/api/tenant/appointments` | Đặt hẹn xem |
+| `DELETE` | `/api/tenant/appointments/:id` | Hủy lịch hẹn |
 
 ## 7. Kiểm tra
 

@@ -1,19 +1,39 @@
 /**
  * `(seller)` group — the SELLER (chủ trọ) interface.
  *
- * Five tabs: Tổng quan · Tin đăng · Lịch hẹn · Khách hàng · Tài khoản.
+ * Architecture (identical to the tenant side after BUG-01):
  *
- * The tab structure is defined here, but the ACCESS CONTROL lives in
- * `useAuthGuard`: a signed-in tenant who opens a seller tab is redirected
- * to their own home.
+ *   (seller)/_layout.tsx          ← THIS FILE. A Stack, plus the guard.
+ *   (seller)/(tabs)/_layout.tsx   ← the bottom navigation, 5 tabs only.
+ *   (seller)/<other screens>      ← pushed on the Stack, never a tab.
+ *
+ * The five tabs:
+ *
+ *   (tabs)/tong-quan  · (tabs)/tin-dang  · (tabs)/lich-hen-xem
+ *   (tabs)/khach-hang · (tabs)/tai-khoan-chu-tro
+ *
+ * Everything else is a sibling of `(tabs)`, so Expo Router can never turn
+ * one of them into a tab:
+ *
+ *   dang-tin · sua-tin/[id] · chi-tiet-khach-hang/[id] · chinh-sua-ho-so
+ *   thong-bao · bao-mat · doi-mat-khau
+ *
+ * Access control lives in `useAuthGuard`: a signed-in tenant who opens a
+ * seller screen is redirected to their own home, and the backend still
+ * refuses every seller API call from a non-seller token.
  */
 
-import { Redirect, Tabs } from 'expo-router';
-import { BarChart3, CalendarDays, Megaphone, Users, User } from 'lucide-react-native';
+import { Redirect, Stack } from 'expo-router';
 
 import { LoadingState } from '@/components/ui';
 import { useAuthGuard } from '@/hooks/use-auth-guard';
-import { colors, fontFamily, fontSize } from '@/constants/theme';
+import { colors } from '@/constants/theme';
+
+/** `(tabs)` is the base of the stack, so a deep link still lands on a tab. */
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+  anchor: '(tabs)',
+};
 
 export default function SellerLayout() {
   const { isChecking, canAccess, redirect } = useAuthGuard({ allowedRole: 'seller' });
@@ -31,66 +51,23 @@ export default function SellerLayout() {
   }
 
   return (
-    <Tabs
+    <Stack
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.ink,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.ink,
-          borderTopWidth: 2,
-          height: 62,
-          paddingBottom: 8,
-          paddingTop: 6,
-        },
-        tabBarLabelStyle: {
-          fontFamily: fontFamily.medium,
-          fontSize: fontSize.xs,
-        },
-        tabBarIconStyle: {
-          marginTop: 2,
-        },
-        sceneStyle: {
-          backgroundColor: colors.background,
-        },
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Tabs.Screen
-        name="tong-quan"
-        options={{
-          title: 'Tổng quan',
-          tabBarIcon: ({ color }) => <BarChart3 size={21} color={color} strokeWidth={2.4} />,
-        }}
-      />
-      <Tabs.Screen
-        name="tin-dang"
-        options={{
-          title: 'Tin đăng',
-          tabBarIcon: ({ color }) => <Megaphone size={21} color={color} strokeWidth={2.4} />,
-        }}
-      />
-      <Tabs.Screen
-        name="lich-hen"
-        options={{
-          title: 'Lịch hẹn',
-          tabBarIcon: ({ color }) => <CalendarDays size={21} color={color} strokeWidth={2.4} />,
-        }}
-      />
-      <Tabs.Screen
-        name="khach-hang"
-        options={{
-          title: 'Khách hàng',
-          tabBarIcon: ({ color }) => <Users size={21} color={color} strokeWidth={2.4} />,
-        }}
-      />
-      <Tabs.Screen
-        name="tai-khoan"
-        options={{
-          title: 'Tài khoản',
-          tabBarIcon: ({ color }) => <User size={21} color={color} strokeWidth={2.4} />,
-        }}
-      />
-    </Tabs>
+      {/* --- Bottom navigation ------------------------------------- */}
+      <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
+
+      {/* --- Screens pushed on top of the tabs ---------------------- */}
+      <Stack.Screen name="dang-tin" options={{ title: 'Đăng tin mới' }} />
+      <Stack.Screen name="sua-tin/[id]" options={{ title: 'Chỉnh sửa tin' }} />
+      <Stack.Screen name="chi-tiet-khach-hang/[id]" options={{ title: 'Chi tiết khách hàng' }} />
+      <Stack.Screen name="chinh-sua-ho-so" options={{ title: 'Chỉnh sửa hồ sơ' }} />
+      <Stack.Screen name="thong-bao" options={{ title: 'Thông báo' }} />
+      <Stack.Screen name="bao-mat" options={{ title: 'Bảo mật' }} />
+      <Stack.Screen name="doi-mat-khau" options={{ title: 'Đổi mật khẩu' }} />
+    </Stack>
   );
 }

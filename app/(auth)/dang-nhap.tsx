@@ -33,6 +33,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Eye, EyeOff } from 'lucide-react-native';
 
 import { SplashLogo } from '@/components/brand';
@@ -43,6 +44,12 @@ import { borderWidth, colors, fontFamily, fontSize, radius, shadow, spacing } fr
 
 /** The size of the brand mark at the top of the screen. */
 const LOGO_SIZE = 72;
+
+/** The register route that exists in the `(auth)` group (SCENE 004). */
+const REGISTER_ROUTE = '/(auth)/dang-ky';
+
+/** The forgot-password route (SCENE 006). */
+const FORGOT_PASSWORD_ROUTE = '/(auth)/quen-mat-khau';
 
 /**
  * The minimum length of a phone number accepted by the backend.
@@ -132,6 +139,7 @@ function describeLoginError(error: unknown): string {
 
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { signIn } = useAuth();
 
   const [phone, setPhone] = useState('');
@@ -178,6 +186,25 @@ export default function SignInScreen() {
   /** The secondary links are not wired up yet — no such route exists. */
   const handleUnavailableRoute = (label: string) => {
     setFormError(`${label} sẽ được bổ sung ở phiên bản tiếp theo.`);
+  };
+
+  /**
+   * Open the forgot-password screen (SCENE 006).
+   */
+  const goToForgotPassword = () => {
+    setFormError(null);
+    router.push(FORGOT_PASSWORD_ROUTE as never);
+  };
+
+  /**
+   * Open the register screen (SCENE 004).
+   *
+   * `push` is used on purpose: the back gesture from the register screen
+   * returns to the sign-in screen, which is where the visitor came from.
+   */
+  const goToRegister = () => {
+    setFormError(null);
+    router.push(REGISTER_ROUTE as never);
   };
 
   return (
@@ -266,7 +293,7 @@ export default function SignInScreen() {
           />
 
           <Pressable
-            onPress={() => handleUnavailableRoute('Quên mật khẩu')}
+            onPress={goToForgotPassword}
             accessibilityRole="link"
             accessibilityLabel="Quên mật khẩu"
             hitSlop={8}
@@ -301,7 +328,7 @@ export default function SignInScreen() {
             Chưa có tài khoản?
           </Text>
           <Pressable
-            onPress={() => handleUnavailableRoute('Đăng ký')}
+            onPress={goToRegister}
             accessibilityRole="link"
             accessibilityLabel="Đăng ký tài khoản"
             hitSlop={8}

@@ -42,7 +42,7 @@ export function useAuthGuard({ allowedRole, signInPath = '/(auth)/dang-nhap' }: 
     // their own home. This runs after the render so the redirect never
     // interrupts the current frame.
     if (hasWrongRole) {
-      const home = role === 'seller' ? '/(seller)/tong-quan' : '/(tenant)/trang-chu';
+      const home = role === 'seller' ? '/(seller)/(tabs)/tong-quan' : '/(tenant)/(tabs)/trang-chu';
       router.replace(home as never);
     }
   }, [hasWrongRole, role, router]);
